@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/iconfont.css">
     <link rel="stylesheet" href="css/main.css">
     <script src="./libs/jquery-1.12.4.min.js"></script>
+    <script src="./libs/http.js"></script>
 
 </head>
 
@@ -24,26 +25,26 @@
                 <div class="form-group">
                     <label for="inputEmail1" class="col-sm-2 control-label">用户名称：</label>
                     <div class="col-sm-4">
-                        <input type="text" name="username" class="form-control username" id="inputEmail1" value="李思思">
+                        <input type="text" name="username" class="form-control username" id="inputEmail1" value="">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail2" class="col-sm-2 control-label">昵称：</label>
                     <div class="col-sm-4">
-                        <input type="text" name="nickname" class="form-control nickname" id="inputEmail2" value="哈哈思">
+                        <input type="text" name="nickname" class="form-control nickname" id="inputEmail2" value="">
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="inputEmail3" class="col-sm-2 control-label">邮箱：</label>
                     <div class="col-sm-4">
-                        <input type="text" name="email" class="form-control email" id="inputEmail3" value="520@163.com">
+                        <input type="text" name="email" class="form-control email" id="inputEmail3" value="">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label for="inputPassword3" class="col-sm-2 control-label">用户图标：</label>
                     <div class="col-sm-10">
-                        <img src="images/2.jpg" alt="" class="user_pic">
+                        <img src="" alt="" class="user_pic">
                         <input style="display: block" name="userPic" type="file" id="exampleInputFile">
                         <!-- 给label标签的for属性赋值,值是input标签的id,那这样的话点击label就相当于点击了input -->
                         <br>
@@ -56,8 +57,7 @@
                 <div class="form-group">
                     <label for="inputEmail4" class="col-sm-2 control-label">密码：</label>
                     <div class="col-sm-4">
-                        <input type="password" name="password" class="form-control password" id="inputEmail4"
-                            value="12345678">
+                        <input type="password" name="password" class="form-control password" id="inputEmail4" value="">
                     </div>
                 </div>
                 <div class="form-group">
@@ -69,5 +69,54 @@
         </div>
     </div>
 </body>
+
+<script>
+    $(function() {
+        // 1 发送ajax请求 获取用户详细信息
+        $.ajax({
+            type: 'get',
+            url: BigNew.user_detail,
+            success: function(backData) {
+                console.log(backData);
+                if (backData.code == 200) {
+                    for (var key in backData.data) {
+                        $('input.' + key).val(backData.data[key]);
+                    }
+                    $('img.user_pic').attr('src', backData.data.userPic)
+                }
+            }
+        })
+
+        // 2 个人信息修改：图片预览
+        //给选择图片的input:file按钮设置一个值改变事件
+        $('#exampleInputFile').on('change', function() {
+            var file1 = this.files[0];
+            //console.log(fileIcon);
+            var url = URL.createObjectURL(file1); //把这个文件生成一个url
+            $("img.user_pic").attr("src", url); //把url交给预览用的img的src
+        })
+
+        // 3 点击修改按钮,完成个人信息的修改
+        $('.btn-edit').on('click', function(e) {
+            e.preventDefault();
+            var form1 = document.querySelector('form');
+            var fd = new FormData(form1);
+            $.ajax({
+                type: 'post',
+                url: BigNew.user_edit,
+                data: fd,
+                contentType: false,
+                processData: false,
+                success: function(backData) {
+                    console.log(backData);
+                    if (backData.code == 200) {
+                        alert('更新成功');
+                        parent.window.location.reload();
+                    }
+                }
+            })
+        })
+    })
+</script>
 
 </html>
