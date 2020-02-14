@@ -14,6 +14,7 @@
     <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
+    <script src="./libs/http.js"></script>
 </head>
 
 <body>
@@ -58,7 +59,7 @@
 
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="gridSystemModalLabel">新增类别</h4>
+                    <h4 class="modal-title" id="gridSystemModalLabel"></h4>
                 </div>
                 <div class="modal-body">
                     <form>
@@ -76,7 +77,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default btn-cancel" data-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-success">确认</button>
+                    <button type="button" id="btnOr" class="btn">确认</button>
                 </div>
             </div>
             <!-- /.modal-content -->
@@ -84,8 +85,6 @@
         <!-- /.modal-dialog -->
     </div>
     <!-- /.modal -->
-
-    <script src="./libs/http.js"></script>
 
     <!-- 文章类别模板 -->
     <script id="article_cate_temp" type="text/html">
@@ -102,17 +101,22 @@
     </script>
     <script>
         $(function() {
-            $.ajax({
-                type: 'get',
-                url: BigNew.category_list,
-                success: function(backData) {
-                    console.log(backData);
-                    if (backData.code == 200) {
-                        var resHtml = template('article_cate_temp', backData);
-                        $('tbody').html(resHtml);
+
+            getData();
+
+            function getData() {
+                $.ajax({
+                    type: 'get',
+                    url: BigNew.category_list,
+                    success: function(backData) {
+                        console.log(backData);
+                        if (backData.code == 200) {
+                            var resHtml = template('article_cate_temp', backData);
+                            $('tbody').html(resHtml);
+                        }
                     }
-                }
-            });
+                });
+            }
 
             //二: 到底点击的是新增分类 /编辑 弹出来的模态框
             //show.bs.modal
@@ -121,12 +125,78 @@
             $("#myModal").on("show.bs.modal", function(e) {
                 //就可以通过e.relatedTarget知道你是新增分类,还是编辑按钮弹出来的模态框
                 //console.log(e.relatedTarget);
-                if (e.relatedTarget == $('xinzengfenlei')[0]) {
+                if (e.relatedTarget == $('#xinzengfenlei')[0]) {
                     $('#gridSystemModalLabel').text('新增分类');
+                    $('#btnOr').text('新增').addClass('btn-primary').removeClass('btn-success');
                 } else {
                     $('#gridSystemModalLabel').text('编辑分类');
+                    $('#btnOr').text('编辑').addClass('btn-success').removeClass('btn-primary');
+
+                    // 把点击的内容显示在模态框内
+                    $('#recipient-name').val($(e.relatedTarget).parent().prev().prev().text().trim());
+                    $('#message-text').val($(e.relatedTarget).parent().prev().prev().text().trim());
+                    $('#category_id').val($(e.relatedTarget).attr('data-id'));
                 }
             });
+
+            $('.btn-cancel').on('click', function() {
+                $('#myModal form')[0].reset();
+            })
+
+            $('#btnOr').on('click', function() {
+                // var categoreId = $('#category_id').val().trim();
+                // var categoreName = $('#recipient-name').val().trim();
+                // var categoreSlug = $('#message-text').val().trim();
+                var data = $('#myModal form').serialize();
+                if ($(this).hasClass('btn-primary')) {
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_add,
+                        data: data,
+                        success: function(backData) {
+                            if (backData.code == 201) {
+                                $('#myModal').modal('hide');
+                                getData();
+                                $('#recipient-name').val("");
+                                $('#message-text').val("");
+                            }
+                        }
+                    })
+                } else {
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_edit,
+                        data: data,
+                        success: function(backData) {
+                            console.log(backData);
+                            if (backData.code == 200) {
+                                $('#myModal').modal('hide');
+                                getData();
+                            }
+                        }
+                    });
+                }
+            })
+
+            $('tbody').on('click ', '.btn-delete', function() {
+                if (confirm('你确定要删除吗？')) {
+                    var categoreId = $(this).attr('data-id');
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_delete,
+                        data: {
+                            id: categoreId
+                        },
+                        success: function(backData) {
+                            console.log(backData);
+                            // 重新加载数据
+                            if (backData.code == 204) {
+                                getData();
+                            }
+                        }
+                    });
+                }
+            })
         });
     </script>
 
