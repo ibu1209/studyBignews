@@ -50,7 +50,44 @@
             </table>
         </div>
     </div>
+
+    <!-- 新增模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="gridSystemModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="gridSystemModalLabel">新增类别</h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <!-- 隐藏域,保存当前这一条文章类别的id -->
+                        <input type="hidden" name="id" id="category_id">
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">文章分类名称:</label>
+                            <input type="text" name="name" class="form-control" id="recipient-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">文章分类别名:</label>
+                            <input class="form-control" name="slug" id="message-text"></input>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default btn-cancel" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-success">确认</button>
+                </div>
+            </div>
+            <!-- /.modal-content -->
+        </div>
+        <!-- /.modal-dialog -->
+    </div>
+    <!-- /.modal -->
+
     <script src="./libs/http.js"></script>
+
+    <!-- 文章类别模板 -->
     <script id="article_cate_temp" type="text/html">
         {{each data v}}
         <tr>
@@ -75,8 +112,22 @@
                         $('tbody').html(resHtml);
                     }
                 }
-            })
-        })
+            });
+
+            //二: 到底点击的是新增分类 /编辑 弹出来的模态框
+            //show.bs.modal
+            //show 方法调用之后立即触发该事件。
+            //如果是通过点击某个作为触发器的元素，则此元素可以通过事件的 relatedTarget 属性进行访问。
+            $("#myModal").on("show.bs.modal", function(e) {
+                //就可以通过e.relatedTarget知道你是新增分类,还是编辑按钮弹出来的模态框
+                //console.log(e.relatedTarget);
+                if (e.relatedTarget == $('xinzengfenlei')[0]) {
+                    $('#gridSystemModalLabel').text('新增分类');
+                } else {
+                    $('#gridSystemModalLabel').text('编辑分类');
+                }
+            });
+        });
     </script>
 
 </html>
