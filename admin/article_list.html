@@ -26,10 +26,6 @@
                     <form class="form-inline">
                         <select id="selCategory" name="" class="form-control input-sm">
                             <option value="">所有分类</option>
-                            <option>未分类</option>
-                            <option>奇趣事</option>
-                            <option>会生活</option>
-                            <option>爱旅行</option>
                         </select>
                         <select id="selStatus" name="" class="form-control input-sm">
                             <option value="">所有状态</option>
@@ -73,10 +69,11 @@
         </div>
     </div>
 </body>
+
 <script id="temp1" type="text/html">
     <option value="">所有分类</option>
     {{each data v}}
-    <option value="{{v.id}}">{{name}}</option>
+    <option value="{{v.id}}">{{v.name}}</option>
     {{/each}}
 </script>
 
@@ -85,9 +82,9 @@
     <tr>
         <td>{{v.title}}</td>
         <td>{{v.author}}</td>
-        <td>{{v.title}}</td>
+        <td>{{v.category}}</td>
         <td class="text-center">{{v.date}}</td>
-        <td class="text-center">{{v.statue}}</td>
+        <td class="text-center">{{v.state}}</td>
         <td class="text-center">
             <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
             <a href="javascript:void(0);" data-id="{{v.categoryId}}" class="btn btn-danger btn-xs delete">删除</a>
@@ -103,29 +100,39 @@
             url: BigNew.category_list,
             success: function(backData) {
                 console.log(backData);
-                if (backData == 200) {
+                if (backData.code == 200) {
                     var resHtml = template('temp1', backData);
                     $('#selCategory').html(resHtml);
                 }
             }
         });
-        $.ajax({
-            type: 'get',
-            url: BigNew.article_query,
-            data: {
-                type: $('#selCategory').val(),
-                state: $('#selStatus').val(),
-                page: 1,
-                perpage: 6
-            },
-            success: function(backData) {
-                console.log(backData);
-                if (backData.code == 200) {
-                    var resHtml = template('temp2', backData);
-                    $('tbody').html(resHtml);
+
+        getQuery();
+
+        function getQuery() {
+            $.ajax({
+                type: 'get',
+                url: BigNew.article_query,
+                data: {
+                    type: $('#selCategory').val().trim(),
+                    state: $('#selStatus').val().trim(),
+                    page: 1,
+                    perpage: 8
+                },
+                success: function(backData) {
+                    console.log(backData);
+                    if (backData.code == 200) {
+                        var resHtml = template('temp2', backData);
+                        $('tbody').html(resHtml);
+                    }
                 }
-            }
-        });
+            });
+        }
+
+        $('#btnSearch').on('click', function(e) {
+            e.preventDefault();
+            getQuery();
+        })
     })
 </script>
 
