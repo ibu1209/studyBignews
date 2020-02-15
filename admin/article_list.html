@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="./css/iconfont.css">
     <link rel="stylesheet" href="./css/main.css">
     <script src="./libs/jquery-1.12.4.min.js"></script>
+    <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="./libs/jquery.twbsPagination.js"></script>
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
 </head>
@@ -65,6 +67,9 @@
                 </tbody>
             </table>
             <div class="row text-center">
+                <!-- 分页插件的结构 -->
+                <ul id="pagination-demo" class="pagination-sm"></ul>
+                <p>没有数据</p>
             </div>
         </div>
     </div>
@@ -87,7 +92,7 @@
         <td class="text-center">{{v.state}}</td>
         <td class="text-center">
             <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
-            <a href="javascript:void(0);" data-id="{{v.categoryId}}" class="btn btn-danger btn-xs delete">删除</a>
+            <a href="javascript:void(0);" data-id="{{v.id}}" class="btn btn-danger btn-xs delete">删除</a>
         </td>
     </tr> {{/each}}
 </script>
@@ -107,16 +112,19 @@
             }
         });
 
-        getQuery();
 
-        function getQuery() {
+        getData(1);
+        // 封装请求文章的函数
+        var myPage; //删除按钮使用
+
+        function getData(myPage, callback) {
             $.ajax({
                 type: 'get',
                 url: BigNew.article_query,
                 data: {
                     type: $('#selCategory').val().trim(),
                     state: $('#selStatus').val().trim(),
-                    page: 1,
+                    page: myPage,
                     perpage: 8
                 },
                 success: function(backData) {
@@ -124,15 +132,148 @@
                     if (backData.code == 200) {
                         var resHtml = template('temp2', backData);
                         $('tbody').html(resHtml);
+                        if (backData.data.totalPage != 0 && callback != null) {
+                            $('#pagination-demo').show();
+                            $('#pagination-demo').next().hide();
+                            callback(backData);
+                        } else if (backData.data.totalPage == 0) {
+                            $('#pagination-demo').hide();
+                            $('#pagination-demo').next().show();
+                        }
                     }
                 }
-            });
+            })
         }
+
+        getData(1, function(backData) {
+            // 分页插件的方法
+            $('#pagination-demo').twbsPagination({
+                totalPages: backData.data.totalPage,
+                visiblePages: 7,
+                first: '首页',
+                prev: '上一页',
+                next: '下一页',
+                last: '尾页',
+                onPageClick: function(event, page) {
+                    myPage = page; //给删除按钮使用
+                    getData(page, null);
+                }
+            })
+        })
 
         $('#btnSearch').on('click', function(e) {
             e.preventDefault();
-            getQuery();
+            getData(1, function(backData) {
+                // 第一个参数是事件， 第二个参数是改变后的总页码，第三个是当前要显示的页码;
+                // 调用changeTotalPages 这个方法 根据新的总页数 重新生成分页结构.
+                $('#pagination-demo').twbsPagination('changeTotalPages',
+                    backData.data.totalPage, 1);
+            })
+        });
+
+        $('tbody').on('click', '.delete', function() {
+            if (confirm('确认删除吗？')) {
+                // 通过当前点击的删除按钮自定义属性（data-id）
+                var setId = $(this).attr('data-id');
+                $.ajax({
+                    type: 'post',
+                    url: BigNew.article_delete,
+                    data: {
+                        id: setId
+                    },
+                    success: function(backData) {
+                        console.log(backData);
+                        if (backData.code == 204) {
+                            // 由于删除数据， 总页码就有可能减少， 需要根据新的总页生成分页结构
+                            getData(myPage, function(backData) {
+                                if (backData.data.totalPage == myPage) {
+                                    $('#pagination-demo').twbsPagination('changeTotalPages',
+                                        backData.data.totalPage, myPage);
+                                } else {
+                                    $('#pagination-demo').twbsPagination('changeTotalPages',
+                                        backData.data.totalPage, myPage - 1);
+                                }
+                            });
+                        }
+                    }
+                })
+            }
         })
+
+        // -------------------------------------------------------
+        // $.ajax({
+        //     type: 'get',
+        //     url: BigNew.article_query,
+        //     data: {
+        //         type: $('#selCategory').val().trim(),
+        //         state: $('#selStatus').val().trim(),
+        //         page: 1,
+        //         perpage: 8
+        //     },
+        //     success: function(backData) {
+        //         console.log(backData);
+        //         if (backData.code == 200) {
+        //             var resHtml = template('temp2', backData);
+        //             $('tbody').html(resHtml);
+
+        //             // 分页插件的方法
+        //             $('#pagination-demo').twbsPagination({
+        //                 totalPages: backData.data.totalPage,
+        //                 visiblePages: 7,
+        //                 first: '首页',
+        //                 prev: '上一页',
+        //                 next: '下一页',
+        //                 last: '尾页',
+        //                 onPageClick: function(event, page) {
+        //                     $.ajax({
+        //                         type: 'get',
+        //                         url: BigNew.article_query,
+        //                         data: {
+        //                             type: $('#selCategory').val().trim(),
+        //                             state: $('#selStatus').val().trim(),
+        //                             page: page,
+        //                             perpage: 8
+        //                         },
+        //                         success: function(backData) {
+        //                             console.log(backData);
+        //                             if (backData.code == 200) {
+        //                                 var resHtml = template('temp2', backData);
+        //                                 $('tbody').html(resHtml);
+        //                             }
+        //                         }
+        //                     });
+        //                 }
+        //             });
+        //         }
+        //     }
+        // });
+
+        // $('#btnSearch').on('click', function(e) {
+        //         e.preventDefault();
+        //         $.ajax({
+        //             type: 'get',
+        //             url: BigNew.article_query,
+        //             data: {
+        //                 type: $('#selCategory').val().trim(),
+        //                 state: $('#selStatus').val().trim(),
+        //                 page: 1,
+        //                 perpage: 8
+        //             },
+        //             success: function(backData) {
+        //                 console.log(backData);
+        //                 if (backData.code == 200) {
+        //                     var resHtml = template('temp2', backData);
+        //                     $('tbody').html(resHtml);
+
+        //                     // 第一个参数是事件， 第二个参数是改变后的总页码，第三个是当前要显示的页码;
+        //                     // 调用changeTotalPages 这个方法 根据新的总页数 重新生成分页结构.
+        //                     $('#pagination-demo').twbsPagination('changeTotalPages',
+        //                         backData.data.totalPage, 1);
+        //                 }
+        //             }
+        //         });
+        //     })
+        // -------------------------------------------------------
     })
 </script>
 
